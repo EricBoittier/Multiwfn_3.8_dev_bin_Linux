@@ -33,12 +33,9 @@ DEFAULT_TYPE_COLOURS: Dict[str, tuple[float, float, float, float]] = {
     "(3,+3)": (0.95, 0.85, 0.25, 1.0),  # cage critical points
 }
 
-TYPE_COLOR_LIST = [
-    (DEFAULT_TYPE_COLOURS["(3,-3)"], "(3,-3)"),
-    (DEFAULT_TYPE_COLOURS["(3,-1)"], "(3,-1)"),
-    (DEFAULT_TYPE_COLOURS["(3,+1)"], "(3,+1)"),
-    (DEFAULT_TYPE_COLOURS["(3,+3)"], "(3,+3)"),
-]
+TYPE_LABELS = ["(3,-3)", "(3,-1)", "(3,+1)", "(3,+3)"]
+TYPE_COLOR_LIST = [(DEFAULT_TYPE_COLOURS[label], label) for label in TYPE_LABELS]
+DEFAULT_FALLBACK_COLOUR = (0.75, 0.75, 0.75, 1.0)
 
 
 def _parse_args(argv: list[str]) -> argparse.Namespace:
@@ -165,16 +162,29 @@ def _get_material(name: str, colour: tuple[float, float, float, float]) -> bpy.t
         nodes.clear()
         emission = nodes.new(type="ShaderNodeEmission")
         emission.inputs["Color"].default_value = rgba
-        emission.inputs["Strength"].default_value = 5.0
+        emission.inputs["Strength"].default_value = 6.0
         output = nodes.new(type="ShaderNodeOutputMaterial")
         links.new(emission.outputs["Emission"], output.inputs["Surface"])
+    else:
+        material.use_nodes = True
+        return _get_material(name, rgba)
 
     material.diffuse_color = rgba
     return material
 
 
+def _normalise_cp_type(cp_type: str) -> str:
+    cleaned = cp_type.strip()
+    if cleaned.startswith("(") and cleaned.endswith(")"):
+        return cleaned
+    if "," in cleaned:
+        return f"({cleaned})"
+    return cleaned
+
+
 def _colour_for_type(cp_type: str) -> tuple[float, float, float, float]:
-    return DEFAULT_TYPE_COLOURS.get(cp_type, (0.75, 0.75, 0.75, 1.0))
+    normalised = _normalise_cp_type(cp_type)
+    return DEFAULT_TYPE_COLOURS.get(normalised, DEFAULT_FALLBACK_COLOUR)
 
 
 def _ensure_camera() -> bpy.types.Object:
@@ -236,7 +246,7 @@ def _align_camera_to_points(positions: list[Vector], distance_factor: float) -> 
     max_radius = max((pos - center).length for pos in positions)
     distance = max(max_radius * distance_factor, 1.0)
 
-    view_dir = Vector((1.4, -1.8, 0.9)).normalized()
+    view_dir = Vector((0.0, -1.0, 0.18)).normalized()
     camera.location = center + view_dir * distance
     _look_at(camera, center)
 
@@ -387,19 +397,24 @@ def main(argv: list[str]) -> None:
     materials: Dict[str, bpy.types.Material] = {}
 
     for idx, position in enumerate(positions):
-        cp_type = cp_types[idx] if idx < len(cp_types) else "unknown"
-        mat_key = f"CP_{cp_type}"
+        raw_type = cp_types[idx] if idx < len(cp_types) else "unknown"
+        normalised_type = _normalise_cp_type(raw_type)
+        colour = _colour_for_type(raw_type)
+        mat_key = f"CP_{normalised_type}"
         if mat_key not in materials:
-            materials[mat_key] = _get_material(mat_key, _colour_for_type(cp_type))
+            materials[mat_key] = _get_material(mat_key, colour)
         sphere = _create_sphere(position, args.scale, materials[mat_key], collection)
-        sphere.name = f"CP_{idx+1}_{cp_type}"
-        sphere["cp_type"] = cp_type
+        sphere.name = f"CP_{idx+1}_{normalised_type}"
+        sphere["cp_type"] = normalised_type
+        sphere.color = colour
         if idx < len(cp_indices):
             sphere["cp_index"] = int(cp_indices[idx])
 
         if args.labels:
             label_text = (
-                f"#{int(cp_indices[idx])} {cp_type}" if idx < len(cp_indices) else f"#{idx+1}"
+                f"#{int(cp_indices[idx])} {normalised_type}"
+                if idx < len(cp_indices)
+                else f"#{idx+1}"
             )
             offset_location = position + Vector((0.0, 0.0, args.scale * 2.0))
             label_obj = _create_label(label_text, offset_location, collection)
