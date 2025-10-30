@@ -179,6 +179,18 @@ def _setup_render_settings(output_path: Path) -> None:
     if hasattr(scene, "cycles"):
         scene.cycles.samples = max(scene.cycles.samples, 256)
         scene.cycles.use_adaptive_sampling = True
+        if hasattr(scene.cycles, "use_denoising"):
+            scene.cycles.use_denoising = False
+        if hasattr(scene.cycles, "use_preview_denoising"):
+            scene.cycles.use_preview_denoising = False
+
+    for view_layer in scene.view_layers:
+        cycles_settings = getattr(view_layer, "cycles", None)
+        if cycles_settings is not None:
+            if hasattr(cycles_settings, "use_denoising"):
+                cycles_settings.use_denoising = False
+            if hasattr(cycles_settings, "denoising_store_passes"):
+                cycles_settings.denoising_store_passes = False
 
 
 def _look_at(camera: bpy.types.Object, target: Vector) -> None:
