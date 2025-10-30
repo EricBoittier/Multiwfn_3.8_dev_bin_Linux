@@ -242,12 +242,12 @@ def _look_at_with_up(camera: bpy.types.Object, target: Vector, up: Vector) -> No
     if abs(direction.dot(up)) > 0.999:
         up = Vector((0.0, 1.0, 0.0)) if abs(direction.z) > 0.5 else Vector((0.0, 0.0, 1.0))
 
-    right = up.cross(direction)
+    right = direction.cross(up)
     if right.length == 0:
         right = Vector((1.0, 0.0, 0.0))
     right.normalize()
 
-    corrected_up = direction.cross(right)
+    corrected_up = right.cross(direction)
     corrected_up.normalize()
 
     rot = Matrix(
