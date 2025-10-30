@@ -79,8 +79,8 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--camera-distance",
         type=float,
-        default=20.0,
-        help="Multiplier applied to the CP cloud radius when positioning the camera (default: 20).",
+        default=6.0,
+        help="Multiplier applied to the CP cloud radius when positioning the camera (default: 6).",
     )
     parser.add_argument(
         "--legend",
@@ -135,19 +135,41 @@ def _activate_collection(collection: bpy.types.Collection) -> None:
     _recurse(view_layer.layer_collection)
 
 
+def _purge_scene() -> None:
+    for obj in list(bpy.data.objects):
+        bpy.data.objects.remove(obj, do_unlink=True)
+
+    root_collection = bpy.context.scene.collection
+    for child in list(root_collection.children):
+        root_collection.children.unlink(child)
+
+    for collection in list(bpy.data.collections):
+        if collection != root_collection and collection.users == 0:
+            bpy.data.collections.remove(collection)
+
+    for material in list(bpy.data.materials):
+        if material.users == 0:
+            bpy.data.materials.remove(material)
+
+
 def _get_material(name: str, colour: tuple[float, float, float, float]) -> bpy.types.Material:
+    rgba = colour if len(colour) == 4 else (*colour[:3], 1.0)
     material = bpy.data.materials.get(name)
     if material is None:
         material = bpy.data.materials.new(name=name)
         material.use_nodes = True
-    if colour:
-        if material.use_nodes and material.node_tree:
-            principled = material.node_tree.nodes.get("Principled BSDF")
-            if principled:
-                principled.inputs["Base Color"].default_value = colour
-                if len(colour) == 4:
-                    principled.inputs["Alpha"].default_value = colour[3]
-        material.diffuse_color = colour
+
+    if material.node_tree:
+        nodes = material.node_tree.nodes
+        links = material.node_tree.links
+        nodes.clear()
+        emission = nodes.new(type="ShaderNodeEmission")
+        emission.inputs["Color"].default_value = rgba
+        emission.inputs["Strength"].default_value = 5.0
+        output = nodes.new(type="ShaderNodeOutputMaterial")
+        links.new(emission.outputs["Emission"], output.inputs["Surface"])
+
+    material.diffuse_color = rgba
     return material
 
 
@@ -214,13 +236,15 @@ def _align_camera_to_points(positions: list[Vector], distance_factor: float) -> 
     max_radius = max((pos - center).length for pos in positions)
     distance = max(max_radius * distance_factor, 1.0)
 
-    view_dir = Vector((1.5, -2.0, 1.2)).normalized()
+    view_dir = Vector((1.4, -1.8, 0.9)).normalized()
     camera.location = center + view_dir * distance
     _look_at(camera, center)
 
     # adjust clipping planes to encompass scene
     camera.data.clip_start = 0.1
     camera.data.clip_end = max(distance * 4.0, 100.0)
+    camera.data.type = "PERSP"
+    camera.data.lens = 45.0
 
 
 def _extract_positions(data: dict, use_bohr: bool) -> tuple[list[Vector], str]:
@@ -351,6 +375,8 @@ def main(argv: list[str]) -> None:
     cp_types = [str(t) for t in cp_types_array] if cp_types_array is not None else []
     cp_indices_array = data.get("cp_index")
     cp_indices = list(cp_indices_array) if cp_indices_array is not None else []
+
+    _purge_scene()
 
     collection = _ensure_collection(args.collection)
     if args.clear:
