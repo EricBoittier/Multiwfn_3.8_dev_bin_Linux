@@ -230,7 +230,9 @@ def _look_at(camera: bpy.types.Object, target: Vector) -> None:
     if direction.length == 0:
         direction = Vector((0.0, 0.0, -1.0))
     quat = direction.to_track_quat("-Z", "Y")
-    camera.rotation_euler = quat.to_euler()
+    euler = quat.to_euler("XYZ")
+    euler.z = 0.0
+    camera.rotation_euler = euler
 
 
 def _align_camera_to_points(positions: list[Vector], distance_factor: float) -> None:
@@ -246,8 +248,7 @@ def _align_camera_to_points(positions: list[Vector], distance_factor: float) -> 
     max_radius = max((pos - center).length for pos in positions)
     distance = max(max_radius * distance_factor, 1.0)
 
-    view_dir = Vector((0.0, -1.0, 0.18)).normalized()
-    camera.location = center + view_dir * distance
+    camera.location = Vector((center.x, center.y - distance, center.z))
     _look_at(camera, center)
 
     # adjust clipping planes to encompass scene
