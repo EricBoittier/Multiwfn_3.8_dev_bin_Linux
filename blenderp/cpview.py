@@ -322,6 +322,9 @@ def _create_legend(collection: bpy.types.Collection) -> None:
 
 
 def main(argv: list[str]) -> None:
+    if bpy is None:  # pragma: no cover - guard for non-Blender environments
+        raise RuntimeError("This script must be run inside Blender.")
+
     if "--" not in argv:
         print("Usage: blender --python blenderp/cpview.py -- <npz_path> [options]")
         return
