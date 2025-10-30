@@ -16,14 +16,11 @@ from pathlib import Path
 from typing import Dict
 
 try:  # pragma: no cover - Blender provides these modules at runtime
-    import bpy
-    from mathutils import Vector
+    import bpy  # type: ignore
+    from mathutils import Vector  # type: ignore
 except ModuleNotFoundError:  # pragma: no cover - allows linting outside Blender
     bpy = None  # type: ignore[assignment]
-
-    class Vector:  # type: ignore[no-redef]
-        def __init__(self, iterable=(0.0, 0.0, 0.0)) -> None:
-            self.x, self.y, self.z = iterable
+    Vector = None  # type: ignore[assignment]
 
 
 
