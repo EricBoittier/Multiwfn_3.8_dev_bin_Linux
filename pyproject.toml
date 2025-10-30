@@ -1,0 +1,22 @@
+ [build-system]
+ requires = ["setuptools>=61"]
+ build-backend = "setuptools.build_meta"
+
+ [project]
+ name = "multiwfn-cli"
+ version = "0.1.0"
+ description = "Command-line interface for running Multiwfn example scripts"
+ readme = "README.md"
+ requires-python = ">=3.11"
+ authors = [
+     { name = "Eric B." }
+ ]
+ dependencies = []
+
+ [project.scripts]
+ multiwfn-cli = "multiwfn_cli.cli:main"
+
+ [tool.setuptools.packages.find]
+ where = ["."]
+ include = ["multiwfn_cli*"]
+
