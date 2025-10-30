@@ -17,7 +17,7 @@ from typing import Dict
 
 try:  # pragma: no cover - Blender provides these modules at runtime
     import bpy  # type: ignore
-    from mathutils import Vector  # type: ignore
+    from mathutils import Matrix, Vector  # type: ignore
 except ModuleNotFoundError:  # pragma: no cover - allows linting outside Blender
     bpy = None  # type: ignore[assignment]
     Vector = None  # type: ignore[assignment]
@@ -226,13 +226,93 @@ def _setup_render_settings(output_path: Path) -> None:
 
 
 def _look_at(camera: bpy.types.Object, target: Vector) -> None:
-    direction = target - camera.location
+    raise RuntimeError("Use _look_at_with_up instead of _look_at.")
+
+
+def _look_at_with_up(camera: bpy.types.Object, target: Vector, up: Vector) -> None:
+    direction = (target - camera.location)
     if direction.length == 0:
         direction = Vector((0.0, 0.0, -1.0))
-    quat = direction.to_track_quat("-Z", "Y")
-    euler = quat.to_euler("XYZ")
-    euler.z = 0.0
-    camera.rotation_euler = euler
+    direction.normalize()
+
+    if up.length == 0:
+        up = Vector((0.0, 0.0, 1.0))
+    up = up.normalized()
+
+    if abs(direction.dot(up)) > 0.999:
+        up = Vector((0.0, 1.0, 0.0)) if abs(direction.z) > 0.5 else Vector((0.0, 0.0, 1.0))
+
+    right = up.cross(direction)
+    if right.length == 0:
+        right = Vector((1.0, 0.0, 0.0))
+    right.normalize()
+
+    corrected_up = direction.cross(right)
+    corrected_up.normalize()
+
+    rot = Matrix(
+        (
+            (right.x, corrected_up.x, -direction.x, 0.0),
+            (right.y, corrected_up.y, -direction.y, 0.0),
+            (right.z, corrected_up.z, -direction.z, 0.0),
+            (0.0, 0.0, 0.0, 1.0),
+        )
+    )
+
+    translation = Matrix.Translation(camera.location)
+    camera.matrix_world = translation @ rot
+
+
+def _principal_axes(positions: list[Vector]) -> tuple[Vector, list[Vector], list[float]]:
+    if not positions:
+        center = Vector((0.0, 0.0, 0.0))
+        axes = [Vector((1.0, 0.0, 0.0)), Vector((0.0, 1.0, 0.0)), Vector((0.0, 0.0, 1.0))]
+        return center, axes, [1.0, 1.0, 1.0]
+
+    try:
+        import numpy as np
+    except ModuleNotFoundError:
+        xs = [pos.x for pos in positions]
+        ys = [pos.y for pos in positions]
+        zs = [pos.z for pos in positions]
+        center = Vector((sum(xs) / len(xs), sum(ys) / len(ys), sum(zs) / len(zs)))
+        axes = [Vector((1.0, 0.0, 0.0)), Vector((0.0, 1.0, 0.0)), Vector((0.0, 0.0, 1.0))]
+        spans = [max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs)]
+        half_extents = [span * 0.5 if span > 0 else 1.0 for span in spans]
+        return center, axes, half_extents
+
+    arr = np.array([[pos.x, pos.y, pos.z] for pos in positions], dtype=float)
+    center_arr = arr.mean(axis=0)
+    demeaned = arr - center_arr
+
+    if np.allclose(demeaned, 0.0):
+        center = Vector(center_arr.tolist())
+        axes = [Vector((1.0, 0.0, 0.0)), Vector((0.0, 1.0, 0.0)), Vector((0.0, 0.0, 1.0))]
+        return center, axes, [1.0, 1.0, 1.0]
+
+    cov = np.dot(demeaned.T, demeaned) / max(len(arr) - 1, 1)
+    eigenvalues, eigenvectors = np.linalg.eigh(cov)
+    order = np.argsort(eigenvalues)
+
+    axes: list[Vector] = []
+    for idx in order:
+        vector = Vector((float(eigenvectors[0, idx]), float(eigenvectors[1, idx]), float(eigenvectors[2, idx])))
+        if vector.length == 0:
+            vector = Vector((1.0, 0.0, 0.0))
+        else:
+            vector.normalize()
+        axes.append(vector)
+
+    projected = demeaned @ eigenvectors
+    half_extents = []
+    for idx in order:
+        if projected.size == 0:
+            half_extents.append(1.0)
+        else:
+            half_extents.append(float(np.max(np.abs(projected[:, idx]))))
+
+    center_vec = Vector((float(center_arr[0]), float(center_arr[1]), float(center_arr[2])))
+    return center_vec, axes, half_extents
 
 
 def _align_camera_to_points(positions: list[Vector], distance_factor: float) -> None:
@@ -240,16 +320,20 @@ def _align_camera_to_points(positions: list[Vector], distance_factor: float) -> 
         return
     camera = _ensure_camera()
 
-    center = Vector((0.0, 0.0, 0.0))
-    for pos in positions:
-        center += pos
-    center /= len(positions)
+    center, axes, half_extents = _principal_axes(positions)
 
-    max_radius = max((pos - center).length for pos in positions)
-    distance = max(max_radius * distance_factor, 1.0)
+    view_dir = axes[0].normalized()
+    up_candidate = axes[2] if len(axes) > 2 else Vector((0.0, 0.0, 1.0))
+    if abs(view_dir.dot(up_candidate)) > 0.95 and len(axes) > 1:
+        up_candidate = axes[1]
+    if abs(view_dir.dot(up_candidate)) > 0.95:
+        up_candidate = Vector((0.0, 0.0, 1.0)) if abs(view_dir.z) < 0.95 else Vector((0.0, 1.0, 0.0))
 
-    camera.location = Vector((center.x, center.y - distance, center.z))
-    _look_at(camera, center)
+    plane_extent = max(half_extents[1:]) if len(half_extents) > 1 else half_extents[0]
+    distance = max(plane_extent * distance_factor + max(half_extents[0], 0.5), 1.0)
+
+    camera.location = center + view_dir * distance
+    _look_at_with_up(camera, center, up_candidate)
 
     # adjust clipping planes to encompass scene
     camera.data.clip_start = 0.1
