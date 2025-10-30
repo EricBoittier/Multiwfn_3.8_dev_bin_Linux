@@ -301,6 +301,7 @@ def _create_sphere(
     for col in list(sphere.users_collection):
         if col != collection:
             col.objects.unlink(sphere)
+    bpy.ops.object.shade_smooth()
     return sphere
 
 
@@ -404,8 +405,7 @@ def main(argv: list[str]) -> None:
             label_obj = _create_label(label_text, offset_location, collection)
             label_obj.parent = sphere
 
-    if args.legend or args.render:
-        _align_camera_to_points(positions, args.camera_distance)
+    _align_camera_to_points(positions, args.camera_distance)
 
     if args.legend:
         _create_legend(collection)
