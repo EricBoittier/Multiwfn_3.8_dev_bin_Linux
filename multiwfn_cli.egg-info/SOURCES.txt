@@ -1,0 +1,16 @@
+LICENSE.txt
+README.md
+pyproject.toml
+multiwfn_cli/__init__.py
+multiwfn_cli/__main__.py
+multiwfn_cli/cli.py
+multiwfn_cli/config.py
+multiwfn_cli/cp_parser.py
+multiwfn_cli/executors.py
+multiwfn_cli/scripts.py
+multiwfn_cli.egg-info/PKG-INFO
+multiwfn_cli.egg-info/SOURCES.txt
+multiwfn_cli.egg-info/dependency_links.txt
+multiwfn_cli.egg-info/entry_points.txt
+multiwfn_cli.egg-info/requires.txt
+multiwfn_cli.egg-info/top_level.txt

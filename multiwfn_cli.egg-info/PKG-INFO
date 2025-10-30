@@ -1,3 +1,14 @@
+Metadata-Version: 2.4
+Name: multiwfn-cli
+Version: 0.1.0
+Summary: Command-line interface for running Multiwfn example scripts
+Author: Eric B.
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+License-File: LICENSE.txt
+Requires-Dist: numpy>=1.24
+Dynamic: license-file
+
 # Multiwfn CLI Helper
 
 A Python-based command-line interface now ships with this workspace. It wraps

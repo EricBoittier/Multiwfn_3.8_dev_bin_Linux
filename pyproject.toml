@@ -11,7 +11,10 @@
  authors = [
      { name = "Eric B." }
  ]
- dependencies = []
+
+dependencies = [
+    "numpy>=1.24",
+]
 
  [project.scripts]
  multiwfn-cli = "multiwfn_cli.cli:main"

@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 from pathlib import Path
 from typing import Iterable, List, Sequence
 
 from .config import load_config
-from .executors import MultiwfnExecutor, MultiwfnOptions, ExecutorError
+from .cp_parser import aggregate_cp_records, parse_cp_file
+from .executors import ExecutorError, MultiwfnExecutor, MultiwfnOptions
 from .scripts import ExecutorType, ScriptDefinition, discover_scripts, find_script
 
 
@@ -83,6 +85,23 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Additional arguments passed through to Multiwfn.",
     )
 
+    cp_parser = subparsers.add_parser(
+        "cp2npz", help="Convert a CPprop.txt-style file into a NumPy .npz archive."
+    )
+    cp_parser.add_argument("input", type=Path, help="Critical point output file to parse.")
+    cp_parser.add_argument(
+        "-o",
+        "--output",
+        dest="output",
+        type=Path,
+        help="Destination .npz file (defaults to replacing input suffix with .npz).",
+    )
+    cp_parser.add_argument(
+        "--no-compress",
+        action="store_true",
+        help="Use numpy.savez instead of numpy.savez_compressed.",
+    )
+
     return parser
 
 
@@ -134,6 +153,34 @@ def _handle_run(
         print(result.note)
     print(f"Multiwfn completed with exit code {result.returncode}.")
     return result.returncode or 0
+
+
+def _handle_cp_to_npz(input_path: Path, output_path: Path | None, compress: bool) -> int:
+    try:
+        np = importlib.import_module("numpy")
+    except ModuleNotFoundError as exc:  # pragma: no cover - handled at runtime
+        raise SystemExit(
+            "numpy is required for the cp2npz command; install it via pip first."
+        ) from exc
+
+    if not input_path.exists():
+        raise SystemExit(f"Input file not found: {input_path}")
+
+    records = parse_cp_file(input_path)
+    if not records:
+        print("No critical points found in the provided file.")
+        return 1
+
+    payload = aggregate_cp_records(records)
+    destination = output_path or input_path.with_suffix(".npz")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+
+    saver = np.savez if not compress else np.savez_compressed
+    saver(destination, **payload)
+    print(
+        f"Wrote {len(records)} critical points and {len(payload)} fields to {destination}."
+    )
+    return 0
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -189,6 +236,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         except ExecutorError as exc:
             parser.error(str(exc))
+
+    if args.command == "cp2npz":
+        return _handle_cp_to_npz(
+            input_path=args.input,
+            output_path=args.output,
+            compress=not args.no_compress,
+        )
 
     parser.error(f"Unknown command: {args.command}")
     return 1

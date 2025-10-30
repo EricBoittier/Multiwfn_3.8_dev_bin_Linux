@@ -1,0 +1,2 @@
+[console_scripts]
+multiwfn-cli = multiwfn_cli.cli:main
