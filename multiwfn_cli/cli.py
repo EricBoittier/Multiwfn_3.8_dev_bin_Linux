@@ -7,6 +7,7 @@ import importlib
 from pathlib import Path
 from typing import Iterable, List, Sequence
 
+from .charges import SUPPORTED_METHODS, run_charges_to_npz
 from .config import load_config
 from .cp_parser import aggregate_cp_records, parse_cp_file
 from .executors import ExecutorError, MultiwfnExecutor, MultiwfnOptions
@@ -100,6 +101,32 @@ def _build_parser() -> argparse.ArgumentParser:
         "--no-compress",
         action="store_true",
         help="Use numpy.savez instead of numpy.savez_compressed.",
+    )
+
+    charges_parser = subparsers.add_parser(
+        "charges2npz",
+        help="Run common charge analyses and bundle the results into an NPZ archive.",
+    )
+    charges_parser.add_argument(
+        "--wavefunction",
+        required=True,
+        type=Path,
+        help="Path to the wavefunction file analysed by Multiwfn.",
+    )
+    charges_parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        help="Destination NPZ file (defaults to <wavefunction>_charges.npz).",
+    )
+    charges_parser.add_argument(
+        "--methods",
+        nargs="+",
+        choices=SUPPORTED_METHODS,
+        help=(
+            "Subset of charge methods to include. Default: "
+            + ", ".join(SUPPORTED_METHODS)
+        ),
     )
 
     return parser
@@ -243,6 +270,21 @@ def main(argv: Sequence[str] | None = None) -> int:
             output_path=args.output,
             compress=not args.no_compress,
         )
+
+    if args.command == "charges2npz":
+        methods = args.methods or SUPPORTED_METHODS
+        destination = run_charges_to_npz(
+            multiwfn_path=config.multiwfn_path,
+            wavefunction_path=args.wavefunction,
+            output_path=args.output,
+            methods=methods,
+        )
+        print(
+            "Wrote charge analyses ("
+            + ", ".join(methods)
+            + f") to {destination}."
+        )
+        return 0
 
     parser.error(f"Unknown command: {args.command}")
     return 1

@@ -12,6 +12,7 @@ python -m multiwfn_cli show AIM --head 5
 python -m multiwfn_cli run AIM --dry-run
 python -m multiwfn_cli run AIM --wavefunction GC.wfn
 python -m multiwfn_cli cp2npz examples/scripts/CPprop.txt
+python -m multiwfn_cli charges2npz --wavefunction examples/benzene.wfn
 ```
 
 By default the CLI looks for scripts in `examples/scripts` and `examples/EDA`
@@ -27,6 +28,9 @@ relative to the current working directory. You can point it elsewhere with
   Multiwfn.
 - Use `cp2npz` to translate Multiwfn CP output (`CPprop.txt`) into a structured
   NumPy archive for downstream analysis.
+- Use `charges2npz` to run a suite of population analyses (Hirshfeld, VDD,
+  Becke, ADCH, CHELPG, MK, CM5, MBIS) and bundle the resulting atomic charges
+  and MBIS multipoles into a single `.npz` file.
 
 Support for shell, batch, VMD, and plotting scripts is planned; at the moment
 the `run` command is limited to numerical Multiwfn scripts.

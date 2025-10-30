@@ -1,0 +1,388 @@
+Multiwfn quick start
+Tian Lu (sobereva@sina.com)
+Last update: 2025-Apr-13, corresponding to Multiwfn manual version 3.8(dev)
+The Multiwfn manual is very detailedly written and well organized, however, it is relatively
+long. In order to make new user of Multiwfn quickly get started, here I provide a very short quick
+start document, which presents answer to a few frequently asked questions and basic guides on how
+to perform common tasks.
+
+1. FAQ
+ Q: What analysis can Multiwfn do? What is the use of Multiwfn?
+A: Please check "Overview" page of Multiwfn website or Chapter 1 of Multiwfn manual.
+ Q: Where can I obtain latest Multiwfn program and manual?
+A: The Multiwfn official website is http://sobereva.com/multiwfn, all resources related to
+Multiwfn can be freely acquired from this site. I highly suggest you frequently check this site to
+update your Multiwfn to the latest version, since development and update of Multiwfn are very
+active.
+ Q: How to cite Multiwfn in most correct way?
+A: Check How to cite Multiwfn.pdf document in Multiwfn binary package.
+ Q: What should I do when I encounter problems in using Multiwfn?
+A: Please always pay attention to all prompts on screen and do not forget to check
+corresponding section of Multiwfn manual. If you are unable to easily find solution, please do not
+hesitate to post message on Multiwfn forum, the English forum is http://sobereva.com/wfnbbs, the
+Chinese forum is http://bbs.keinsci.com/wfn. Commonly, the developer checks these two forums
+every day and always timely replies questions.
+ Q: What is the smoothest and quick way of learning Multiwfn?
+A: Reading Chapter 1, Sections 2.1~2.5 of Chapter 2, and then follow the tutorials in Chapter
+4. After that if you want to learn more about theoretical backgrounds and details of Multiwfn, then
+read Section 2.6~2.8 of Chapter 2 and Chapter 3. Note that the tutorials and examples given in
+Chapter 4 only cover most important and frequently used functions rather than all functions of
+Multiwfn. By the way, there is a Youtube channel of Multiwfn, in which there are some video
+illustrations for special topics.
+ Q: How to install Multiwfn?
+A: Check Section 2.1.
+ Q: Which format of input file can be used?
+A: Check Section 2.3.
+
+ Q: How to generate input files for Multiwfn?
+A: Check beginning of Chapter 4. Almost all mainstream quantum chemistry codes can at least
+generate one kind of input file that supported by Multiwfn for wavefunction analysis purpose.
+ Q: Can Multiwfn analyze periodic systems?
+A: Yes, please check Section 2.9 of manual for detail.
+ Q: Why Multiwfn occasionally suddenly exits?
+A: Possible reasons:
+(1) The format of input file is inappropriate for present task. Please carefully check the
+corresponding section of the manual on the requirement of input file.
+(2) The input file is problematic or incomplete. Please regenerate it or open it using text editor
+to check for abnormalities.
+(3) Your operation steps are incorrect or the command you inputted is wrong and thus cannot
+be recognized. Please always carefully check prompts on screen, or try to reproduce the
+corresponding examples in the manual before using Multiwfn to study your system.
+(4) Insufficient of memory. If you are using Win32 version of Multiwfn, please change to the
+Win64 one. You can also try to increase "ompstacksize" in settings.ini. If you are using Linux
+version, please make sure you have properly configured your system according to Section 2.1.
+(5) If your task relies on NBO output file and meantime diffuse functions are employed, remove
+diffuse functions and try again.
+(6) Due to bug of Multiwfn. Please report it to developer on Multiwfn official forum.
+ Q: Why Multiwfn crashes under Linux and show error "Segmentation fault"?
+A: Commonly this is because you didn't strictly follow Section 2.1.2 to configure your system.
+If you are really unable to solve this problem, please use Windows version. If your input file is
+problematic, you may also encounter this problem.
+ Q: How to copy output of Multiwfn from console window to text file?
+A: See Section 5.4.
+ Q: How to run Multiwfn using command line mode? How to use Multiwfn process a
+batch of input files?
+A: See Sections 5.2 and 5.3.
+ Q: The console window cannot record all printed information, the older output was
+flushed out
+A: Increase buffer size of the console window so that the window can record more lines of
+output, see Sections 5.5.
+ Q: I don't understand meaning of each column of the text file outputted by Multiwfn
+A: Please carefully check prompts on screen. Bear in mind, when Multiwfn exports a file, the
+meaning of each column is always clearly shown.
+ Q: What is the unit of the data outputted by Multiwfn?
+A: Unless otherwise specified, all units are in atomic unit (a.u.). When Multiwfn exports a text
+file, the unit is always explicitly shown on screen.
+ Q: I can't find the file(s) exported by Multiwfn
+
+A: If Multiwfn doesn't explicitly ask you to input the path of the file for exporting, the file is
+always generated in current folder. The meaning of "current folder" has clearly been mentioned in
+page 2 of the manual.
+ Q: Electrostatic potential analysis (ESP) is slow for large system
+A: Calculating ESP is significantly more expensive than calculating most other real space
+functions. If you are calculating ESP grid data (e.g. in main function 5, or in basin analysis module)
+I strongly suggest making Multiwfn invoke cubegen utility in Gaussian package to significantly
+speed up the calculation, see Section 5.7. However, for other kind of ESP analysis, invoking cubegen
+will never bring benefit and is thus deprecated.
+ Q: Multiwfn is failed to invoke Gaussian to perform calculation under Windows
+system with error "No executable for file l1.exe"
+A: See Appendix 1 of manual. You need to set up GAUSS_EXEDIR environment variable in
+your system.
+ Q: How to load a new file without rebooting Multiwfn?
+A: Return to main menu, input r (meaning “reload”).
+ Q: How to quit Multiwfn?
+A: Press Ctrl+C or directly close the window. If you want to exit gracefully, input q in the main
+function menu.
+
+2. Which manual section should I read?
+Below I will show you which manual section(s) should be read if you want to perform
+corresponding task. For brevity, "see Section x.x.x for introduction and Section y.y.y for example"
+will be abbreviated as "x.x.x (i); y.y.y (e)".
+ AIM analysis
+Topology analysis: 3.14 (i); 4.2 (e)
+Plane map with critical points and bond paths: 3.5.5 (i); 4.4.6 (e)
+Basin analysis for electron density: 3.20 (i); 4.17.1 (e)
+Basin analysis for Source function: 4.17.5 (e)
+ ELF (electron localization function) and LOL (localized orbital locator) analysis
+Topology analysis: 3.14 (i); 4.2.2 (e)
+Basin analysis for ELF: 3.20 (i); 4.17.2 (e)
+Atom contributions to ELF basins: 4.17.7 (e)
+Plotting as plane map: 4.4.2, 4.4.8, 4.4.9 (e), special case: 4.100.19 (e)
+Plotting as isosurface map: 4.5.1, 4.5.3, 4.100.22 (e)
+Spherically symmetric average ELF / LOL: 3.100.4 (i)
+High ELF localization domain population and volume (HELP and HELV): 4.17.8 (i,e)
+ Visual analysis of weak interaction
+Non-covalent interaction (NCI) analysis: 3.23.1 (i,e); 4.20.1 (e).
+Promolecular NCI analysis: 3.23.2 (i); 4.20.2 (e)
+Averaged NCI analysis: 3.23.3 (i); 4.20.3 (e)
+Topology analysis of IRI and RDG/NCI: 4.2.11 (e)
+Domain analysis within NCI isosurfaces: 3.200.14 (i); 4.200.14.1 (e)
+Independent gradient model (IGM) analysis: 3.23.5 (i); 4.20.10 (e)
+IGM analysis based on Hirshfeld partition of molecular density (IGMH): 3.23.6 (i); 4.20.11 (e)
+Modified IGM (mIGM) analysis: 3.23.10 (i); 4.20.12 (e)
+Averaged mIGM (amIGM) analysis: 3.23.11 (i); 4.20.13 (e)
+Interaction region indicator (IRI): 3.23.8 (i); 4.20.4 (e)
+Density overlap regions indicator (DORI) analysis: 3.23.4 (i); 4.20.5 (e)
+Hirshfeld surface analysis: 3.15.5 (i); 4.12.5 and 4.12.6 (e)
+Visualization of van der Waals potential: 3.23.7 (i), 4.20.6 (e)
+Topology analysis of van der Waals potential: 4.2.10 (e)
+ Visualizing various kinds of orbitals as isosurface
+Isosurface map: 3.2 (i); 4.0 (e)
+Plane map: 4.4.5 (e)
+Exporting cube file for a batch of orbitals: 3.200.3 (i)
+ Evaluating various real space functions at a point
+3.3 (i); 4.1 (e)
+ Plotting various real space functions
+Curve map: 3.4 (i); 4.3 (e)
+
+Plane map: 3.5 (i); 4.4 (e)
+Isosurface map: 4.5 (e)
+Radial distribution function: 3.200.5 (i); 4.200.5 (e)
+ Generate cube file of real space functions
+3.6 (i); 4.5 (e)
+ Atomic charge and population analysis
+Mulliken charges and population analysis: 3.9.3 (i); 4.7.0 (e)
+Löwdin, SCPA: 3.9.4, 3.9.5 (i)
+AIM charges: 3.9.12 (i); 4.17.1 (e)
+ADCH (atomic dipole moment corrected Hirshfeld population): 3.9.9 (i); 4.7.2 (e)
+Hirshfeld: 3.9.1 (i); 4.7.1 (e)
+Hirshfeld-I: 3.9.13 (i); 4.7.4 (e)
+CM5: 3.19.14 (i), 4.7.9 (e)
+1.2*CM5: 4.7.9 (i,e)
+Electronegativity Equalization Method (EEM): 3.9.15 (i); 4.7.5 (e)
+CHELPG: 3.9.10 (i); 4.7.1 (e)
+RESP (Restrained ElectroStatic Potential): 3.9.16 (i); 4.7.7 (e)
+RESP2: 4.7.7.9 (i,e)
+PEOE (Gasteiger): 3.9.16 (i); 4.7.9 (e)
+MBIS: 3.9.18 (i)
+ Bond order analysis
+Laplacian bond order (LBO): 3.11.7 (i); 4.9.3 (e)
+Mayer bond order: 3.11.1 (i); 4.9.1 (e)
+Orbital occupancy-perturbed Mayer bond order 3.11.5 (i); 4.9.1 (e)
+Multi-center bond order: 3.11.2 (i); 4.9.2 (e)
+Wiberg bond order: 3.11.3 (i)
+Decompose Wiberg bond order in NAO basis as atomic orbital pair contributions: 3.11.8 (i);
+4.9.4 (e)
+Mulliken bond order analysis and its decomposition: 3.11.4 (i); 4.9.5 (e)
+Fuzzy bond order: 3.11.6 (i), 4.9.1 (e)
+Bond order density (BOD) and natural adaptive orbital (NAdO) analyses: 3.200.20 (i),
+4.200.20 (e)
+Bond order alternation (BOA): 3.200.18 (i), 4.200.18 (e)
+Intrinsic bond strength index (IBSI): 3.11.9 (i), 4.9.6 (e)
+AV1245 index: 3.11.10 (i); 4.9.11 (e)
+ Density-of-state (DOS), photoelectron spectrum (PES) and COHP
+Total, partial, overlap DOS (TDOS, PDOS, OPDOS): 3.12.1 (i); 4.10.1 (e) and 4.10.3 (e)
+Local DOS: 3.12.4 (i); 4.10.2 (e)
+MO-PDOS: 4.10.5 (i,e)
+Photoelectron spectrum based on Koopmans' theorem: 3.12.5 (i); 4.10.4 (e)
+d-band center: 4.10.6 (e)
+COHP: 3.12.6 (i), 4.10.7 (e)
+
+ Plotting IR, Raman, UV-Vis, ECD, VCD, ROA and NMR spectra
+IR, Raman, UV-Vis, ECD, VCD, ROA: 3.13 (i); 4.11 (e)
+NMR: 3.13.5 (i); 4.11.10 (e)
+Partial vibrational spectrum (PVS) and partial vibrational density-of-states (PVDOS): 3.13.6
+(i); 4.11.12 (e)
+Directional UV-Vis spectrum: 3.13.1 (i); 4.11.13 (e)
+Predicting color based on UV-Vis spectrum: 3.12.7 (i); 4.11.14 (e)
+ Orbital composition analysis
+3.10 (i); 4.8 (e)
+Analyzing π and lone pair compositions in an orbital: 4.100.22 (e) and 4.200.6.2 (e),
+respectively
+Quantifying extent of spatial delocalization of orbitals via orbital delocalization index (ODI):
+4.8.5 (i,e)
+Quantifying extent of spatial delocalization of orbitals via spatial delocalization index (SDI):
+3.200.19 (i); 4.200.19 (e)
+ Orbital localization and relevant analysis
+3.22 (i); 4.19 (e)
+Oxidation state evaluation via LOBA method: 3.10.7 (i); 4.8.4 (e)
+ AdNDP (Adaptive natural density partitioning) analysis
+3.17 (i); 4.14 (e)
+ Charge decomposition analysis (CDA) and orbital interaction diagram
+3.19 (i); 4.16 (e)
+ Extended Transition State - Natural Orbitals for Chemical Valence (ETS-NOCV)
+3.26 (i); 4.23 (e)
+ Electrostatic potential (ESP) analysis
+Various kinds of quantitative molecular surface analysis: 3.15 (i); 4.12.1 and 4.12.3 (e)
+Plotting ESP colored vdW surface map: 4.A.13 (e)
+Plotting plane map: 4.4.4 (e)
+Topology analysis: 4.2.9 (e)
+Basin analysis: 4.17.3 (e)
+Predicting binding energy using ESP at nuclear position: 4.1.2 (i,e)
+Plotting ESP minimum points with isosurface to reveal lone pairs: 4.17.4 (e)
+Calculating area and average ESP value of σ-hole and π-hole: 4.12.10 (e)
+Basin-like analysis on vdW surface for ESP: 4.12.11 (e)
+ Electron excitation analysis
+Comprehensive overview: 4.A.12
+hole-electron analysis: 3.21.1 (i); 4.18.1 (e)
+IFCT (InterFragment Charge Transfer) analysis, heat map of atom-atom charge transfer matrix:
+3.21.8 (i); 4.18.8 (e)
+Transition density and transition dipole moment density analysis: 3.21.1 (i); 4.18.2.1 (e)
+Heat map of transition density matrix (TDM) and transition dipole moment density matrix:
+
+3.21.2 (i); 4.18.2.2 and 4.18.2.3 (e)
+Quantitative analysis for density difference grid data: 3.21.3 (i); 4.18.3 (e)
+∆r and Λ indices: 3.21.4, 3.21.14 (i); 4.18.4 (e)
+Natural transition orbitals (NTOs): 3.21.6 (i); 4.18.6 (e)
+Wavefunction analysis for an excited state: 4.18.13 (e)
+Transition dipole moments between excited states, excited state dipole moment: 3.21.5 (i)
+Generating transition density matrix between ground state and excited states, as well as
+between two excited states: 3.21.9 (i); 4.18.2.3 (e)
+Generating natural orbitals for transition density matrix: 3.21.9 (i); 4.18.9 (i)
+Decomposing transition dipole moment as MO contributions: 3.21.10 (i); 4.18.10 (e)
+Decomposing transition dipole moment as fragment, atom or basis function contributions:
+3.21.11 (i); 4.18.11 (e)
+TrEsp (transition charge from electrostatic potential) and exciton coupling: 4.A.9 (i,e)
+Mulliken atomic transition charges: 3.21.12 (i)
+Evaluating NBO contributions to electron excitation: 3.200.13 (i); 4.200.13.3 (e)
+Ghost-hunter index: 3.21.7 (i); 4.18.1 (e)
+Print major MO transitions in all excited states: 3.21.15 (i,e)
+Calculate charge-transfer spectrum (CTS): 3.21.16 (i), 4.18.16 (e)
+Electron density polarization analysis based on electron excitations: 3.21.17 (i), 4.18.17 (e)
+ Weak interaction analysis
+Comprehensive overview: 4.A.5
+AIM topology study: 3.14 (i); 4.2 (e)
+Various kind of visual studies: See "Visual analysis of weak interaction" in present document
+Simple energy decomposition or EDA-FF energy decomposition: See "Energy decomposition
+analysis" in present document
+Plane or isosurface map of electron density difference between interacting monomers: 4.5.5 (e)
+Plotting electrostatic potential (ESP) colored van der Waals (vdW) surface map and penetration
+graph of vdW surface of monomers: 4.A.13 (e)
+Studying minima and maxima of ESP on vdW surface: 3.15 (i); 4.12.1 (e)
+Quantitative evaluation of mutual penetration of vdW surfaces: 4.A.5 (i)
+CVB index: 3.200.1 (i,e)
+LOLIPOP (LOL Integrated Pi Over Plane): 3.100.14 (i); 4.200.14 (e)
+∆∆Vn index: 4.1.2 (i,e)
+ Predicting reactive site
+Overview: 4.A.4
+ESP on vdW surface: 4.12.1 (e)
+Average local ionization energy (ALIE) on vdW surface: 4.12.2 (e)
+Local electron affinity and local electron attachment energy on molecular surface: 4.12.13 (e)
+Manually calculating Fukui function and dual descriptor: 4.5.4 (e)
+Manually calculating condensed Fukui function and condensed dual descriptor: 4.7.3 (e)
+Fully automatic calculation of all functions and quantities involved in the conceptual density
+functional theory (CDFT): 3.25 (i); 4.22.1 (e)
+
+Fukui potential and dual descriptor potential: 4.22.4 (e)
+Orbital weighted Fukui function and dual descriptor: 3.100.16.3 (i), 4.100.16.2 (e)
+(Quasi-)degenerate Fukui function and dual descriptor as well as relevant quantities:
+3.100.16.4 (i), 4.100.16.3 (e)
+Evaluating MO and NBO contributions to Fukui function: 3.200.13 (i); 4.200.13.1 and
+4.200.13.2 (e)
+Orbital overlap distance function: 4.12.8 (e)
+ Aromaticity analysis
+Comprehensive Overview: 4.A.3
+Iso-chemical shielding surface (ICSS): 3.28.3 (i); 4.25.3 (e)
+1-dimensional NICS curve map, integral NICS (INICS), FiPC-NICS: 3.28.13 (i); 4.25.13 (e)
+2-dimensional NICS plane map: 3.28.14 (i); 4.25.14 (e)
+HOMA and Bird indices: 3.28.6 (i); 4.25.6 (e)
+HOMAc and HOMER indices: 3.28.7 (i)
+Multi-center bond order (multi-center index, MCI): 3.11.2 (i); 4.9.2 (e)
+AV1245 index: 3.11.10 (i); 4.9.11 (e)
+Shannon aromaticity index (SA) and properties at ring critical point (RCP): 3.14.6 (i); 4.2.1 (e)
+PDI: 3.18.6 (i); 4.15.2 (e)
+FLU, FLU-π: 3.18.7 (i); 4.15.2 (e)
+PLR: 3.18.9 (i); 4.15.2 (e)
+ELF-σ, ELF-π: 4.4.9, 4.5.3, 4.100.22 (e)
+Information-theoretic aromaticity index: 3.18.11 (i)
+NICSZZ for non-planar or tilted system: 3.28.4 (i)
+ Electronic density difference (EDD) analysis
+Plane and isosurface EDD maps between two fragments: 4.5.5 (e)
+Between excited state and ground state: 4.18.3 (e)
+Between two excited states: 4.18.13 (e)
+Deformation density: 4.4.7 (e)
+Basin analysis: 4.17.4 (e)
+Charge displacement curve: 3.16.14 (i) and 4.13.6 (e)
+ Processing grid data
+Mathematical operation between grid data: 3.16.7 (i); 4.13.2 (e)
+Screening specific regions: 3.16.9 and 3.16.10 (i); 4.13.4 (e)
+Statistical analysis: 3.16.13 (i)
+ Electronic spin distribution analysis
+Spin density curve map: 4.3.1 (e)
+Overview of spin population calculation: 4.A.2
+ Energy decomposition analysis
+sobEDA and sobEDAw energy decomposition: J. Phys. Chem. A, 127, 7023 (2023) (i);
+http://sobereva.com/soft/sobEDA_tutorial.zip (e)
+Energy decomposition based on forcefield (EDA-FF): 3.24.1 (i); 4.21.1 (e)
+Analysis of atomic contributions to dispersion energy and dispersion energy: 3.24.4 (i); 4.21.4
+
+(e)
+Shubin Liu's energy decomposition (EDA-SBL): 3.24.2 (i); 4.21.2 (e)
+Simple energy decomposition: 3.100.8 (i); 4.100.8 (e)
+ (Hyper)polarizability study
+Parsing output file of "polar" task of Gaussian, obtaining various quantities related to
+(hyper)polarizability and hyper-Rayleigh scattering (HRS) experiment: 3.27.1 (i); 4.24.1 (e)
+Calculating (hyper)polarizability using sum-over-states (SOS) method: 3.27.2.1 (i); 4.24.2.1
+(e)
+Two-level and three-level analyses for first hyperpolarizability: 3.27.2.2 (i); 4.24.2.2 (e)
+(Hyper)polarizability density and atomic contribution to (hyper)polarizability: 4.27.3 (i);
+4.24.3 (e)
+Unit sphere representation and vector representation of (hyper)polarizability: 3.27.5 (i), 4.24.5
+(e)
+Calculating atomic effective volume, atomic polarizability and C6 dispersion coefficient in a
+molecule: 3.18.12 (i), 4.15.4 (e)
+ Predicting properties of condensed phase
+3.15.1 (i); 4.12.7 (e)
+ Overlap analysis of wavefunction and geometry
+Intermolecular electron density overlap: 4.13.7 (e)
+Intermolecular van der Waals surface penetration: 4.A.13 (e)
+Overlap integral between Alpha and Beta orbitals of a system and estimating <S2>: 3.100.5 (i)
+Intrasystem orbital superposition and centroid distance: 3.100.11 (i)
+Intermolecular orbital overlap integral: 3.100.15 (i); 4.100.15 (e)
+Correspondence between orbitals in two wavefunctions, overlap integral and superposition
+between orbitals in single or two wavefunctions: 3.200.6 (i); 4.200.6 (e)
+ Geometry structure analysis
+Measuring diameter and length/width/height: 3.100.21 (i); 4.100.21.1 (e)
+Calculating molecular planarity parameter (MPP) and span of deviation from plane (SDP):
+3.100.21 (i); 4.100.21.2, 4.100.21.3 (i,e)
+Visualizing molecular cavity and calculating its volume: 4.200.14.2 (e)
+Calculating cavity diameter of molecule and crystal, as well as graphically representing it as
+sphere: 3.100.21 (i); 4.100.21.4 (e)
+van der Waals volume (Monte Carlo method): 3.100.3 (i)
+van der Waals volume (Marching Tetrahedron method): 4.12.1 (e)
+Area of van der Waals surface of whole system or individual fragments: 4.12.9 (e)
+Interatomic connectivity and atomic coordination number: 3.100.9 (i,e)
+Average bond length and average coordinate number: 3.200.9 (i)
+Bond length alternation (BLA), bond angle and dihedral alternations: 3.200.18 (i), 4.200.18 (e)
+Kinetic diameter: 4.12.12 (e)
+Viewing free regions and calculating free volume in a cell: 3.300.1 (i), 4.300.1 (e)
+Plot surface distance projection map: 3.300.8 (i), 4.300.8 (e)
+ Electronic correlation analysis
+
+Visual study of Fermi hole and Coulomb hole: 4.3.2 (e)
+Localization index (LI) and delocalization index (DI): 3.18.5 (i); 4.15.1, 4.17.1 (e)
+Odd electron density: 4.A.6 (i,e)
+Fractional occupation number weighted electron density (FOD) and local electron correlation
+functions: 4.A.7 (i,e)
+ Overview of all methods supported by Multiwfn for studying chemical bonds
+4.A.11
+ Others
+Biorthogonalization analysis for unrestricted orbitals: 3.100.12 (i); 4.100.12 (e)
+Visualizing atomic electric dipole and quadrupole moments: 4.15.5 (e)
+Valence electron density analysis: 4.6.2 (e)
+Simulating scanning tunneling microscope (STM) image: 3.300.4 (i), 4.300.4 (e)
+File format conversion and yield input file of quantum chemistry codes: 3.100.2 (i)
+Integrating a function over the whole space, examination of difference of a real space function
+between two wavefunction files: 3.100.4 (i,e)
+Detecting π orbitals and setting their/others occupation numbers, evaluating π composition of
+a given set of orbitals: 3.100.22 (i); 4.100.22, 4.5.3, 4.4.9 (e)
+Yoshizawa's electron transmission route analysis: 3.100.18 (i); 4.100.18 (e)
+Calculating atomic and bond dipole moments in Hilbert space: 3.200.2 (i)
+Calculating atomic, fragment or system electric dipole/quadruple/octopole moments
+numerically: 3.18.3 (i); 4.15.3 (e)
+Calculating system electric dipole/quadruple/octopole/hexadecapole moments and electronic
+spatial extent <r2> based on analytical integrals: 3.300.5 (i), 4.300.5 (e)
+Outputting various kinds of integral between orbitals: 3.200.10 (i)
+Outputting Coulomb and exchange integrals between two orbitals: 3.200.17 (i,e)
+Calculating center, the first and second moments, radius of gyration, and spatial extent <r2> of
+a real space function: 3.200.11 (i,e)
+Calculating energy index (EI) or bond polarity index (BPI): 3.200.12 (i); 4.200.12 (e)
+Generating natural orbitals, natural spin orbitals and spin natural orbitals: 3.200.16 (i,e)
+Geometry operation on the present system: 3.300.7 (i)
+Determining Fermi level: 3.300.9 (i,e)
+Fitting sphericalized atomic radial density as multiple STOs or GTFs: 3.300.2 (i), 4.300.2 (e)
+Generating Gaussian input file with initial guess combined from fragment wavefunctions:
+3.100.8 (i); 4.100.8 (e)
+Monitoring SCF convergence process of Gaussian: 3.100.6 (i)
+
+
