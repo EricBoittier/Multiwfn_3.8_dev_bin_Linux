@@ -130,6 +130,8 @@ def _handle_run(
         print("Input script:")
         _print_script(script)
         return 0
+    if result.note:
+        print(result.note)
     print(f"Multiwfn completed with exit code {result.returncode}.")
     return result.returncode or 0
 
