@@ -166,14 +166,23 @@ def run_charges_to_npz(
 
         for method in selected_methods:
             script = _build_script(method, resolved_wavefunction)
-            run_multiwfn(multiwfn_path, script, tmp_path)
+            existing_chg = {path.name for path in tmp_path.glob("*.chg")}
+            existing_mbis_mpl = {path.name for path in tmp_path.glob("*.mbis_mpl")}
+            process = run_multiwfn(multiwfn_path, script, tmp_path)
 
-            base_name = resolved_wavefunction.stem
-            chg_source = tmp_path / f"{base_name}.chg"
-            if not chg_source.exists():
+            # Identify newly created .chg file
+            new_chg_files = [
+                path
+                for path in tmp_path.glob("*.chg")
+                if path.name not in existing_chg
+            ]
+            if not new_chg_files:
                 raise FileNotFoundError(
-                    f"Multiwfn did not produce the expected charge file for method '{method}'."
+                    "Multiwfn did not produce the expected charge file for "
+                    f"method '{method}'.\nMultiwfn output (truncated):\n"
+                    f"{process.stdout.strip()}"
                 )
+            chg_source = max(new_chg_files, key=lambda item: item.stat().st_mtime)
             chg_target = tmp_path / f"{method}.chg"
             chg_source.rename(chg_target)
 
@@ -189,12 +198,21 @@ def run_charges_to_npz(
             charges[method] = method_charges
 
             if method == "mbis":
-                mpl_source = tmp_path / f"{base_name}.mbis_mpl"
-                if not mpl_source.exists():
-                    raise FileNotFoundError(
-                        "MBIS multipole file was not generated."
-                    )
+                mpl_candidates = [
+                    path
+                    for path in tmp_path.glob("*.mbis_mpl")
+                    if path.name not in existing_mbis_mpl
+                ]
+                if not mpl_candidates:
+                    mpl_candidates = list(tmp_path.glob("*.mbis_mpl"))
+                    if not mpl_candidates:
+                        raise FileNotFoundError(
+                            "MBIS multipole file was not generated."
+                        )
+                mpl_source = max(mpl_candidates, key=lambda item: item.stat().st_mtime)
                 mpl_target = tmp_path / "mbis.mpl"
+                if mpl_target.exists():
+                    mpl_target.unlink()
                 mpl_source.rename(mpl_target)
                 mbis_data = _parse_mbis_multipoles(mpl_target, len(atoms))
 
