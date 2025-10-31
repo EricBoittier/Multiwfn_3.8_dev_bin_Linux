@@ -14,6 +14,7 @@ from .cp_parser import aggregate_cp_records, parse_cp_file
 from .executors import ExecutorError, MultiwfnExecutor, MultiwfnOptions
 from .scripts import ExecutorType, ScriptDefinition, discover_scripts, find_script
 from .convert import convert_to_mwfn
+from .grid_filter import filter_grid_to_npz
 
 
 def _iterable_or_none(values: Sequence[str] | None) -> Iterable[Path] | None:
@@ -191,6 +192,60 @@ def _build_parser() -> argparse.ArgumentParser:
         "--overwrite",
         action="store_true",
         help="Allow overwriting an existing destination file.",
+    )
+
+    filter_parser = subparsers.add_parser(
+        "gridfilter",
+        help="Cull grid points from an NPZ based on atomic distances or value thresholds.",
+    )
+    filter_parser.add_argument(
+        "--grid-npz",
+        required=True,
+        type=Path,
+        help="Input NPZ created by grid2npz.",
+    )
+    filter_parser.add_argument(
+        "--wavefunction",
+        required=True,
+        type=Path,
+        help="Wavefunction file containing atomic coordinates (e.g. converted .mwfn).",
+    )
+    filter_parser.add_argument(
+        "--output",
+        type=Path,
+        help="Destination NPZ (defaults to <grid>_filtered.npz).",
+    )
+    filter_parser.add_argument(
+        "--property",
+        default="esp_au",
+        help="Grid property key to use when applying value thresholds (default: esp_au).",
+    )
+    filter_parser.add_argument(
+        "--radius-scale",
+        type=float,
+        default=1.2,
+        help="Scale factor applied to covalent radii when removing near-atomic points (default: 1.2).",
+    )
+    filter_parser.add_argument(
+        "--min-distance",
+        type=float,
+        help="Absolute minimum distance (Angstrom) from any atom; overrides radius-based filtering when provided.",
+    )
+    filter_parser.add_argument(
+        "--max-value",
+        type=float,
+        help="Drop grid points where the chosen property exceeds this value (a.u.).",
+    )
+    filter_parser.add_argument(
+        "--max-abs-value",
+        type=float,
+        help="Drop grid points where the absolute property value exceeds this threshold (a.u.).",
+    )
+    filter_parser.add_argument(
+        "--fallback-radius",
+        type=float,
+        default=1.5,
+        help="Covalent radius (Angstrom) used for elements not in the reference table (default: 1.5).",
     )
 
     return parser
@@ -376,6 +431,22 @@ def main(argv: Sequence[str] | None = None) -> int:
             overwrite=args.overwrite,
         )
         print(f"Converted {args.input} to {result.output_path}.")
+        return 0
+
+    if args.command == "gridfilter":
+        destination = filter_grid_to_npz(
+            multiwfn_path=config.multiwfn_path,
+            wavefunction_path=args.wavefunction,
+            grid_path=args.grid_npz,
+            output_path=args.output,
+            property_key=args.property,
+            radius_scale=args.radius_scale,
+            min_distance=args.min_distance,
+            max_value=args.max_value,
+            max_abs_value=args.max_abs_value,
+            fallback_radius=args.fallback_radius,
+        )
+        print(f"Filtered grid written to {destination}.")
         return 0
 
     parser.error(f"Unknown command: {args.command}")
