@@ -247,6 +247,22 @@ def _build_parser() -> argparse.ArgumentParser:
         default=1.5,
         help="Covalent radius (Angstrom) used for elements not in the reference table (default: 1.5).",
     )
+    filter_parser.add_argument(
+        "--target-count",
+        type=int,
+        help="Down-sample the filtered grid to approximately this many points.",
+    )
+    filter_parser.add_argument(
+        "--sampling-method",
+        choices=["random", "farthest"],
+        default="random",
+        help="Sampling method when reducing point count (default: random).",
+    )
+    filter_parser.add_argument(
+        "--seed",
+        type=int,
+        help="Random seed used when sampling (for reproducibility).",
+    )
 
     return parser
 
@@ -445,6 +461,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             max_value=args.max_value,
             max_abs_value=args.max_abs_value,
             fallback_radius=args.fallback_radius,
+            target_point_count=args.target_count,
+            sampling_method=args.sampling_method,
+            random_seed=args.seed,
         )
         print(f"Filtered grid written to {destination}.")
         return 0

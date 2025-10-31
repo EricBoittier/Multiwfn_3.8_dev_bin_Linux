@@ -140,6 +140,26 @@ def _lookup_radii(elements: Iterable[str], fallback: float) -> np.ndarray:
     return np.asarray(radii, dtype=float)
 
 
+class SamplingMethod(str):
+    RANDOM = "random"
+    FARTHEST = "farthest"
+
+
+def _farthest_point_sampling(points: np.ndarray, target_count: int, seed: int | None) -> np.ndarray:
+    rng = np.random.default_rng(seed)
+    selected = [rng.integers(0, len(points))]
+    distances = np.full(len(points), np.inf)
+
+    while len(selected) < target_count:
+        last_selected = points[selected[-1]]
+        dist = np.linalg.norm(points - last_selected, axis=1)
+        distances = np.minimum(distances, dist)
+        next_idx = np.argmax(distances)
+        selected.append(int(next_idx))
+
+    return np.array(selected, dtype=int)
+
+
 def filter_grid_to_npz(
     *,
     multiwfn_path: Path,
@@ -152,6 +172,9 @@ def filter_grid_to_npz(
     max_value: float | None,
     max_abs_value: float | None,
     fallback_radius: float = 1.5,
+    target_point_count: int | None = None,
+    sampling_method: str = SamplingMethod.RANDOM,
+    random_seed: int | None = None,
 ) -> Path:
     resolved_multiwfn = multiwfn_path.expanduser().resolve(strict=True)
     resolved_wavefunction = wavefunction_path.expanduser().resolve(strict=True)
@@ -203,6 +226,25 @@ def filter_grid_to_npz(
 
     if not np.any(mask):
         raise GridFilterError("All grid points were filtered; adjust thresholds.")
+
+    filtered_points = grid_points[mask]
+
+    if target_point_count is not None and target_point_count < filtered_points.shape[0]:
+        if sampling_method == SamplingMethod.RANDOM:
+            rng = np.random.default_rng(random_seed)
+            sampled_idx = rng.choice(filtered_points.shape[0], target_point_count, replace=False)
+        elif sampling_method == SamplingMethod.FARTHEST:
+            sampled_idx = _farthest_point_sampling(filtered_points, target_point_count, random_seed)
+        else:
+            raise GridFilterError(
+                f"Unsupported sampling method '{sampling_method}'. Choose 'random' or 'farthest'."
+            )
+        sampled_mask = np.zeros_like(mask)
+        filtered_indices = np.flatnonzero(mask)
+        sampled_indices = filtered_indices[sampled_idx]
+        sampled_mask[sampled_indices] = True
+        mask = sampled_mask
+        filtered_points = grid_points[mask]
 
     filtered_payload: Dict[str, np.ndarray] = {}
     for key, array in payload.items():

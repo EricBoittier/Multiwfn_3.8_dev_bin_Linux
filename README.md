@@ -16,6 +16,7 @@ python -m multiwfn_cli charges2npz --wavefunction examples/benzene.wfn
 python -m multiwfn_cli grid2npz --wavefunction examples/benzene.wfn --grid-mode 1
 python -m multiwfn_cli convert --input input.molden --output input.mwfn
 python -m multiwfn_cli gridfilter --grid-npz examples/benzene_grid.npz --wavefunction examples/benzene.mwfn
+python -m multiwfn_cli gridfilter --grid-npz examples/benzene_grid.npz --wavefunction examples/benzene.mwfn --max-value 5 --target-count 3000 --sampling-method farthest
 ```
 
 By default the CLI looks for scripts in `examples/scripts` and `examples/EDA`
@@ -43,6 +44,7 @@ relative to the current working directory. You can point it elsewhere with
   cannot produce an `.mwfn` export.
 - Use `gridfilter` to remove grid points that are too close to nuclei or exceed
   a chosen ESP threshold (e.g. to eliminate large positive spikes near atoms).
+  You can also down-sample to a fixed count (e.g. `--target-count 3000 --sampling-method farthest`).
 
 ## Conda Environment
 
