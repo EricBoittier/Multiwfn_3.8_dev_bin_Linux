@@ -46,6 +46,35 @@ relative to the current working directory. You can point it elsewhere with
   a chosen ESP threshold (e.g. to eliminate large positive spikes near atoms).
   You can also down-sample to a fixed count (e.g. `--target-count 3000 --sampling-method farthest`).
 
+## Slurm Batch Scripts
+
+Three helper scripts under the repository root wrap the CLI commands for batch
+processing on Slurm clusters. Each script honours the `SUBSET_COUNT` environment
+variable so you can keep the array size manageable.
+
+- `slurm_convert_charges.sbatch` – convert `~/carb/jobs/*.molden` to `.mwfn` and
+  run `charges2npz`. Optional environment variables:
+  - `SUBSET_COUNT`: number of files processed by each array task (default: all).
+  - `GRID_OVERWRITE_CONVERT=1`: force regeneration of the `.mwfn` file.
+- `slurm_convert_grids.sbatch` – similar loop that runs `grid2npz` (and, if
+  `GRID_FILTER_ENABLE=1`, follows up with `gridfilter`). Additional options:
+  - `GRID_MODE` (default `1`) and `GRID_PROPERTIES` (default `"esp vdw"`).
+  - `GRID_FILTER_MAX_VALUE`, `GRID_FILTER_TARGET_COUNT`, `GRID_FILTER_SAMPLING`,
+    etc. mirror the CLI flags; any variable left unset is skipped.
+- `slurm_cp2npz.sbatch` – processes `~/carb/jobs/*CPprop.txt` with `cp2npz`.
+  Set `CP_NO_COMPRESS=1` if you prefer uncompressed NPZ output.
+
+Submit as a modest array, for example:
+
+```bash
+export SUBSET_COUNT=10
+sbatch --array=0-9 slurm_convert_charges.sbatch
+```
+
+Adjust the array range so it covers the number of chunks you need
+(`ceil(total_files / SUBSET_COUNT)` jobs). Each task picks up the appropriate
+segment and skips gracefully when no matching files exist.
+
 ## Conda Environment
 
 Multiwfn depends on the OpenMotif runtime library (`libXm.so.4`). The provided
