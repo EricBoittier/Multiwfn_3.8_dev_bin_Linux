@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import subprocess
 import tempfile
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
 import numpy as np
 
+from ._multiwfn import compose_script, run_multiwfn
 
 SUPPORTED_METHODS: Tuple[str, ...] = (
     "hirshfeld",
@@ -48,24 +48,7 @@ def _build_script(method: str, wavefunction: Path) -> str:
         raise ValueError(f"Unsupported method '{method}'.")
     lines = [str(wavefunction.resolve())]
     lines.extend(_METHOD_SCRIPTS[method])
-    return "\n".join(lines) + "\n"
-
-
-def _run_multiwfn(executable: Path, script: str, cwd: Path) -> subprocess.CompletedProcess[str]:
-    process = subprocess.run(
-        [str(executable)],
-        input=script,
-        text=True,
-        cwd=str(cwd),
-        capture_output=True,
-        check=False,
-    )
-    if process.returncode not in {0, 24}:
-        raise RuntimeError(
-            "Multiwfn execution failed with exit code "
-            f"{process.returncode}.\nSTDOUT:\n{process.stdout}\nSTDERR:\n{process.stderr}"
-        )
-    return process
+    return compose_script(lines)
 
 
 def _parse_chg(path: Path) -> Tuple[List[str], np.ndarray, np.ndarray]:
@@ -183,7 +166,7 @@ def run_charges_to_npz(
 
         for method in selected_methods:
             script = _build_script(method, resolved_wavefunction)
-            _run_multiwfn(multiwfn_path, script, tmp_path)
+            run_multiwfn(multiwfn_path, script, tmp_path)
 
             base_name = resolved_wavefunction.stem
             chg_source = tmp_path / f"{base_name}.chg"

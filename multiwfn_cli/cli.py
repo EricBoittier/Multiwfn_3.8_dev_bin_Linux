@@ -9,6 +9,7 @@ from typing import Iterable, List, Sequence
 
 from .charges import SUPPORTED_METHODS, run_charges_to_npz
 from .config import load_config
+from .grids import SUPPORTED_GRID_PROPERTIES, run_grid_to_npz
 from .cp_parser import aggregate_cp_records, parse_cp_file
 from .executors import ExecutorError, MultiwfnExecutor, MultiwfnOptions
 from .scripts import ExecutorType, ScriptDefinition, discover_scripts, find_script
@@ -126,6 +127,41 @@ def _build_parser() -> argparse.ArgumentParser:
         help=(
             "Subset of charge methods to include. Default: "
             + ", ".join(SUPPORTED_METHODS)
+        ),
+    )
+
+    grids_parser = subparsers.add_parser(
+        "grid2npz",
+        help="Evaluate grid-based properties (ESP, vdW potential) and store them in an NPZ archive.",
+    )
+    grids_parser.add_argument(
+        "--wavefunction",
+        required=True,
+        type=Path,
+        help="Path to the wavefunction file analysed by Multiwfn.",
+    )
+    grids_parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        help="Destination NPZ file (defaults to <wavefunction>_grid.npz).",
+    )
+    grids_parser.add_argument(
+        "--properties",
+        nargs="+",
+        choices=SUPPORTED_GRID_PROPERTIES,
+        help=(
+            "Grid properties to include. Default: "
+            + ", ".join(SUPPORTED_GRID_PROPERTIES)
+        ),
+    )
+    grids_parser.add_argument(
+        "--grid-mode",
+        choices=["1", "2", "3"],
+        default="1",
+        help=(
+            "Grid density preset used by Multiwfn (1=low, 2=medium, 3=high). "
+            "Default: 1."
         ),
     )
 
@@ -282,6 +318,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             "Wrote charge analyses ("
             + ", ".join(methods)
+            + f") to {destination}."
+        )
+        return 0
+
+    if args.command == "grid2npz":
+        properties = args.properties or SUPPORTED_GRID_PROPERTIES
+        destination = run_grid_to_npz(
+            multiwfn_path=config.multiwfn_path,
+            wavefunction_path=args.wavefunction,
+            output_path=args.output,
+            properties=properties,
+            grid_mode=args.grid_mode,
+        )
+        print(
+            "Wrote grid analyses ("
+            + ", ".join(properties)
             + f") to {destination}."
         )
         return 0

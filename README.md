@@ -13,6 +13,7 @@ python -m multiwfn_cli run AIM --dry-run
 python -m multiwfn_cli run AIM --wavefunction GC.wfn
 python -m multiwfn_cli cp2npz examples/scripts/CPprop.txt
 python -m multiwfn_cli charges2npz --wavefunction examples/benzene.wfn
+python -m multiwfn_cli grid2npz --wavefunction examples/benzene.wfn --grid-mode 1
 ```
 
 By default the CLI looks for scripts in `examples/scripts` and `examples/EDA`
@@ -31,6 +32,9 @@ relative to the current working directory. You can point it elsewhere with
 - Use `charges2npz` to run a suite of population analyses (Hirshfeld, VDD,
   Becke, ADCH, CHELPG, MK, CM5, MBIS) and bundle the resulting atomic charges
   and MBIS multipoles into a single `.npz` file.
+- Use `grid2npz` to evaluate grid-based properties (ESP, vdW potential). The
+  resulting NPZ stores the grid point coordinates and property values in atomic
+  units.
 
 Support for shell, batch, VMD, and plotting scripts is planned; at the moment
 the `run` command is limited to numerical Multiwfn scripts.
