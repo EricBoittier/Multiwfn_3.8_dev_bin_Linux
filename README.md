@@ -14,6 +14,7 @@ python -m multiwfn_cli run AIM --wavefunction GC.wfn
 python -m multiwfn_cli cp2npz examples/scripts/CPprop.txt
 python -m multiwfn_cli charges2npz --wavefunction examples/benzene.wfn
 python -m multiwfn_cli grid2npz --wavefunction examples/benzene.wfn --grid-mode 1
+python -m multiwfn_cli convert --input input.molden --output input.mwfn
 ```
 
 By default the CLI looks for scripts in `examples/scripts` and `examples/EDA`
@@ -35,6 +36,10 @@ relative to the current working directory. You can point it elsewhere with
 - Use `grid2npz` to evaluate grid-based properties (ESP, vdW potential). The
   resulting NPZ stores the grid point coordinates and property values in atomic
   units.
+- Use `convert` to let Multiwfn export a loaded wavefunction (e.g. `.molden`) as
+  an `.mwfn` file that downstream tooling can read without additional prompts.
+  The source format must contain basis function information; otherwise Multiwfn
+  cannot produce an `.mwfn` export.
 
 ## Conda Environment
 

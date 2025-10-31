@@ -13,6 +13,7 @@ from .grids import SUPPORTED_GRID_PROPERTIES, run_grid_to_npz
 from .cp_parser import aggregate_cp_records, parse_cp_file
 from .executors import ExecutorError, MultiwfnExecutor, MultiwfnOptions
 from .scripts import ExecutorType, ScriptDefinition, discover_scripts, find_script
+from .convert import convert_to_mwfn
 
 
 def _iterable_or_none(values: Sequence[str] | None) -> Iterable[Path] | None:
@@ -163,6 +164,33 @@ def _build_parser() -> argparse.ArgumentParser:
             "Grid density preset used by Multiwfn (1=low, 2=medium, 3=high). "
             "Default: 1."
         ),
+    )
+
+    convert_parser = subparsers.add_parser(
+        "convert",
+        help="Convert wavefunction files to other supported formats (currently .mwfn).",
+    )
+    convert_parser.add_argument(
+        "--input",
+        required=True,
+        type=Path,
+        help="Wavefunction file to convert (any Multiwfn-supported input).",
+    )
+    convert_parser.add_argument(
+        "--output",
+        type=Path,
+        help="Destination file (defaults to <input>.mwfn).",
+    )
+    convert_parser.add_argument(
+        "--format",
+        choices=["mwfn"],
+        default="mwfn",
+        help="Target format. Only 'mwfn' is currently supported.",
+    )
+    convert_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Allow overwriting an existing destination file.",
     )
 
     return parser
@@ -336,6 +364,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             + ", ".join(properties)
             + f") to {destination}."
         )
+        return 0
+
+    if args.command == "convert":
+        if args.format != "mwfn":  # pragma: no cover - guarded by argparse choices
+            parser.error("Unsupported target format. Choose mwfn.")
+        result = convert_to_mwfn(
+            multiwfn_path=config.multiwfn_path,
+            input_path=args.input,
+            output_path=args.output,
+            overwrite=args.overwrite,
+        )
+        print(f"Converted {args.input} to {result.output_path}.")
         return 0
 
     parser.error(f"Unknown command: {args.command}")
