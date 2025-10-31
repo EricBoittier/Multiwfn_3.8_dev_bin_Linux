@@ -10,6 +10,7 @@ from typing import Dict, Iterable, Tuple
 import numpy as np
 
 from ._multiwfn import compose_script, run_multiwfn
+from ._geometry import export_geometry
 
 
 BOHR_TO_ANGSTROM = 0.529177210903
@@ -103,6 +104,10 @@ def run_grid_to_npz(
     if not resolved_wavefunction.is_file():
         raise FileNotFoundError(f"Wavefunction file not found: {resolved_wavefunction}")
 
+    resolved_multiwfn = multiwfn_path.expanduser().resolve(strict=True)
+    if not resolved_multiwfn.is_file():
+        raise FileNotFoundError(f"Multiwfn executable not found: {resolved_multiwfn}")
+
     if grid_mode not in {"1", "2", "3"}:
         raise ValueError("Grid mode must be one of '1', '2', or '3'.")
 
@@ -131,7 +136,7 @@ def run_grid_to_npz(
         for prop in selected_properties:
             property_code = _PROPERTY_CODES[prop]
             script = _build_script(resolved_wavefunction, property_code, grid_mode)
-            process = run_multiwfn(multiwfn_path, script, tmp_path)
+            process = run_multiwfn(resolved_multiwfn, script, tmp_path)
 
             info = _extract_metadata(process.stdout)
             file_path = tmp_path / "output.txt"
@@ -166,6 +171,11 @@ def run_grid_to_npz(
     if grid_points is None or metadata is None:
         raise RuntimeError("Grid extraction failed; no data collected.")
 
+    symbols, coords = export_geometry(
+        multiwfn_path=resolved_multiwfn,
+        wavefunction_path=resolved_wavefunction,
+    )
+
     payload["grid_points_angstrom"] = grid_points
     payload["grid_shape"] = metadata["counts"].astype(int)
     payload["grid_origin_bohr"] = metadata["origin_bohr"]
@@ -174,6 +184,8 @@ def run_grid_to_npz(
     payload["grid_origin_angstrom"] = metadata["origin_bohr"] * BOHR_TO_ANGSTROM
     payload["grid_end_angstrom"] = metadata["end_bohr"] * BOHR_TO_ANGSTROM
     payload["grid_spacing_angstrom"] = metadata["spacing_bohr"] * BOHR_TO_ANGSTROM
+    payload["atom_symbols"] = symbols
+    payload["atom_coords_angstrom"] = coords
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(output_path, **payload)
