@@ -10,34 +10,42 @@
 
 set -euo pipefail
 
+BATCH_SIZE=${SUBSET_COUNT:-0}
+
 # Discover target Molden files once when the job starts.
-mapfile -t MOLDEN_FILES < <(ls -1 ~/carb/jobs/*.molden)
+mapfile -t MOLDEN_FILES < <(ls -1 ~/carb/jobs/*.molden 2>/dev/null)
 
 if [[ ${#MOLDEN_FILES[@]} -eq 0 ]]; then
     echo "No *.molden files found under ~/carb/jobs/." >&2
-    exit 1
+    exit 0
 fi
 
-if [[ -z "${SLURM_ARRAY_TASK_ID:-}" ]]; then
-    echo "This script is intended to run as a Slurm array." >&2
-    echo "Submit with: sbatch --array=0-$(( ${#MOLDEN_FILES[@]} - 1 )) slurm_convert_charges.sbatch" >&2
-    exit 1
+TOTAL=${#MOLDEN_FILES[@]}
+
+if [[ ${BATCH_SIZE} -eq 0 ]]; then
+    BATCH_SIZE=${TOTAL}
 fi
 
-INPUT=${MOLDEN_FILES[$SLURM_ARRAY_TASK_ID]}
-BASENAME=${INPUT%.molden}
+BATCH_START=${SLURM_ARRAY_TASK_ID:-0}
+BATCH_END=$((BATCH_START + BATCH_SIZE))
 
-source "${HOME}/miniforge3/etc/profile.d/conda.sh"
-conda activate multiwfn-cli
+for ((idx=BATCH_START; idx < BATCH_END && idx < TOTAL; idx++)); do
+    INPUT=${MOLDEN_FILES[$idx]}
+    BASENAME=${INPUT%.molden}
 
-export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
+    source "${HOME}/miniforge3/etc/profile.d/conda.sh"
+    conda activate multiwfn-cli
 
-python -m multiwfn_cli convert \
-    --input "$INPUT" \
-    --output "${BASENAME}.mwfn" \
-    --overwrite
+    export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
-python -m multiwfn_cli charges2npz \
-    --wavefunction "${BASENAME}.mwfn" \
-    --output "${BASENAME}_charges.npz"
+    python -m multiwfn_cli convert \
+        --input "$INPUT" \
+        --output "${BASENAME}.mwfn" \
+        --overwrite
+
+    python -m multiwfn_cli charges2npz \
+        --wavefunction "${BASENAME}.mwfn" \
+        --output "${BASENAME}_charges.npz"
+
+done
 
