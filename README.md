@@ -36,6 +36,20 @@ relative to the current working directory. You can point it elsewhere with
   resulting NPZ stores the grid point coordinates and property values in atomic
   units.
 
+## Conda Environment
+
+Multiwfn depends on the OpenMotif runtime library (`libXm.so.4`). The provided
+`conda-environment.yml` file installs `openmotif` alongside Python and NumPy so
+that scripted runs (including the CLI helpers) work on systems where the
+library is not available globally.
+
+Create and activate the environment with:
+
+```bash
+conda env create -f conda-environment.yml
+conda activate multiwfn-cli
+```
+
 Support for shell, batch, VMD, and plotting scripts is planned; at the moment
 the `run` command is limited to numerical Multiwfn scripts.
 
