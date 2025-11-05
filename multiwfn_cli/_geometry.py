@@ -83,6 +83,16 @@ def export_geometry(
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Return atomic symbols and coordinates (Å) by exporting a PDB via Multiwfn."""
 
+    ext = wavefunction_path.suffix.lower()
+    if ext == ".mwfn":
+        try:
+            records = _parse_mwfn_atoms(wavefunction_path)
+            symbols = np.asarray([record.element for record in records], dtype="U4")
+            coords = np.vstack([record.coord for record in records])
+            return symbols, coords
+        except Exception:  # pragma: no cover - fallback to Multiwfn
+            pass
+
     with tempfile.TemporaryDirectory(prefix="multiwfn-geom-") as tmp:
         tmp_path = Path(tmp)
         script = compose_script(
@@ -127,6 +137,38 @@ def _parse_pdb(path: Path) -> list[AtomRecord]:
             atoms.append(AtomRecord(element=element, coord=np.array([x, y, z], dtype=float)))
     if not atoms:
         raise RuntimeError("No atom records parsed from exported PDB.")
+    return atoms
+
+
+def _parse_mwfn_atoms(path: Path) -> list[AtomRecord]:
+    atoms: list[AtomRecord] = []
+    in_section = False
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            stripped = line.strip()
+            if not stripped:
+                if in_section:
+                    break
+                continue
+            lower = stripped.lower()
+            if lower.startswith("atom information"):
+                in_section = True
+                continue
+            if not in_section:
+                continue
+            parts = stripped.split()
+            if len(parts) < 6 or parts[0].lower() != "atom":
+                continue
+            try:
+                x, y, z = map(float, parts[-3:])
+            except ValueError as exc:  # pragma: no cover - defensive
+                raise RuntimeError(
+                    f"Failed to parse coordinates from mwfn line: {stripped}"
+                ) from exc
+            symbol = parts[2]
+            atoms.append(AtomRecord(element=symbol.capitalize(), coord=np.array([x, y, z], dtype=float)))
+    if not atoms:
+        raise RuntimeError("MWFN file did not contain parsable atom information.")
     return atoms
 
 

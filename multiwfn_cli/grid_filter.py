@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict
-
 import numpy as np
 
 from ._geometry import export_geometry, lookup_covalent_radii
@@ -124,7 +122,7 @@ def filter_grid_to_npz(
         mask = sampled_mask
         filtered_points = grid_points[mask]
 
-    filtered_payload: Dict[str, np.ndarray] = {}
+    filtered_payload = {}
     for key, array in payload.items():
         if isinstance(array, np.ndarray) and array.shape[0] == point_count:
             filtered_payload[key] = array[mask]
